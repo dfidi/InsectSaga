@@ -3,14 +3,13 @@ using System;
 public class PlayerController : InsectController
 {
     private InputScheme _input;
-
+    
     private void AttachInput()
     {
         _input = new InputScheme();
-
-        //_input.Player.Move.ReadValue<float>();
-        _input.Player.Jump.performed += context => { };
-        _input.Player.RunMode.performed += context => { };
+        
+        _input.Player.Jump.performed += context => { Jump(); };
+        _input.Player.RunMode.performed += context => { WalkRunMode(); };
     }
 
     void Awake()
@@ -21,6 +20,7 @@ public class PlayerController : InsectController
     private void OnEnable()
     {
         _input.Enable();
+        
     }
 
     private void OnDisable()
@@ -30,11 +30,12 @@ public class PlayerController : InsectController
 
     protected override void Start()
     {
-        
+        base.Start();
     }
 
     protected override void Update()
     {
-        
+        float dir = _input.Player.Move.ReadValue<float>();
+        Move(dir);
     }
 }
