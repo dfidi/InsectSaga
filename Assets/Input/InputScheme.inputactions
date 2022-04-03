@@ -24,12 +24,21 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "RunMode",
+                    "name": "RunModeOn",
                     "type": "Button",
                     "id": "90dae07d-1385-4892-83a2-dfcd19752a19",
                     "expectedControlType": "Button",
                     "processors": "",
-                    "interactions": "Press(behavior=2)",
+                    "interactions": "Press",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "RunModeOff",
+                    "type": "Button",
+                    "id": "6327b707-d2d7-4551-8bff-541fe0415268",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "Press(behavior=1)",
                     "initialStateCheck": false
                 }
             ],
@@ -162,7 +171,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
-                    "action": "RunMode",
+                    "action": "RunModeOn",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -173,7 +182,29 @@
                     "interactions": "",
                     "processors": "",
                     "groups": "Mouse and Keyboard",
-                    "action": "RunMode",
+                    "action": "RunModeOn",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "57854094-f85c-4413-87d1-832c43671d7d",
+                    "path": "<Mouse>/rightButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Mouse and Keyboard",
+                    "action": "RunModeOff",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "e68e375e-fdf0-4788-bc86-fe27df128695",
+                    "path": "<Gamepad>/rightTrigger",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "RunModeOff",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

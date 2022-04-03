@@ -467,6 +467,7 @@ MonoBehaviour:
   jumpPowerWalk: 8
   moveSpeed: 6
   jumpPower: 10
+  curState: 0
 --- !u!50 &409642778
 Rigidbody2D:
   serializedVersion: 4

@@ -1,15 +1,15 @@
-using System;
 
 public class PlayerController : InsectController
 {
     private InputScheme _input;
-    
+
     private void AttachInput()
     {
         _input = new InputScheme();
         
         _input.Player.Jump.performed += context => { Jump(); };
-        _input.Player.RunMode.performed += context => { WalkRunMode(); };
+        _input.Player.RunModeOn.performed += context => { TryEnableRunMode(); };
+        _input.Player.RunModeOff.performed += context => { DisableRunMode(); };
     }
 
     void Awake()
@@ -36,6 +36,9 @@ public class PlayerController : InsectController
     protected override void Update()
     {
         float dir = _input.Player.Move.ReadValue<float>();
+
         Move(dir);
+        
+        base.Update();
     }
 }
