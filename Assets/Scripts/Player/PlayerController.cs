@@ -8,7 +8,7 @@ public class PlayerController : InsectController
         _input = new InputScheme();
         
         _input.Player.Jump.performed += context => { Jump(); };
-        _input.Player.RunModeOn.performed += context => { TryEnableRunMode(); };
+        _input.Player.RunModeOn.performed += context => { ChangeStateEnableRunMode(); };
         _input.Player.RunModeOff.performed += context => { DisableRunMode(); };
     }
 
@@ -36,9 +36,17 @@ public class PlayerController : InsectController
     protected override void Update()
     {
         float dir = _input.Player.Move.ReadValue<float>();
-
-        Move(dir);
+        
+        MoveDir = dir;
+        
+        if (dir < -0.01f) IsFlipped = true;
+        else if (dir > 0.01f) IsFlipped = false;
         
         base.Update();
+    }
+
+    protected override void FixedUpdate()
+    {
+        base.FixedUpdate();
     }
 }
