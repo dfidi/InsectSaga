@@ -1,4 +1,6 @@
 
+using UnityEngine;
+
 public class PlayerController : InsectController
 {
     private InputScheme _input;
@@ -10,6 +12,8 @@ public class PlayerController : InsectController
         _input.Player.Jump.performed += context => { Jump(); };
         _input.Player.RunModeOn.performed += context => { ChangeStateEnableRunMode(); };
         _input.Player.RunModeOff.performed += context => { DisableRunMode(); };
+        
+        
     }
 
     void Awake()
@@ -17,16 +21,9 @@ public class PlayerController : InsectController
         AttachInput();
     }
 
-    private void OnEnable()
-    {
-        _input.Enable();
-        
-    }
+    private void OnEnable() { _input.Enable(); }
 
-    private void OnDisable()
-    {
-        _input.Disable();
-    }
+    private void OnDisable() { _input.Disable(); }
 
     protected override void Start()
     {
@@ -35,7 +32,8 @@ public class PlayerController : InsectController
 
     protected override void Update()
     {
-        float dir = _input.Player.Move.ReadValue<float>();
+        Vector2 inputDirection = _input.Player.Movement.ReadValue<Vector2>();
+        float dir = IsVerticalInput ? inputDirection.y:inputDirection.x;
         
         MoveDir = dir;
         

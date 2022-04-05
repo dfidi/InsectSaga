@@ -1,4 +1,6 @@
+using System;
 using UnityEngine;
+using DG.Tweening;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class InsectController : MonoBehaviour
@@ -10,7 +12,7 @@ public class InsectController : MonoBehaviour
     [Header("Ползающий режим")]
     public float moveSpeed = 1;
     public float jumpPower = 1;
-    
+
     [Space]
 
     public float minDistanceToWall = 0.5f;
@@ -19,8 +21,15 @@ public class InsectController : MonoBehaviour
     public GameObject walkBody;
     public GameObject runBody;
 
+    public Transform checkGroundCircle;
+    public LayerMask groundLayer;
+
+    public SpriteRenderer walkSprite;
+    public SpriteRenderer runSprite;
+
     protected float MoveDir;
     
+    protected bool IsVerticalInput;
     protected bool Grounded;
     protected bool IsFlipped;
     
@@ -35,57 +44,48 @@ public class InsectController : MonoBehaviour
     private bool _isTryEnableRunMode;
 
     private int _currentPoint;
-
-    protected bool CheckWall()
-    {
-        RaycastHit2D[] res = Physics2D.RaycastAll(transform.position, Vector2.right * (IsFlipped ? -1 : 1), minDistanceToWall);
-
-        foreach (var hit in res)
-        {
-            if (hit.collider.CompareTag("Ground"))
-            {
-                return true;
-            }
-        }
-        
-        return false;
-    }
-
-    protected bool CheckAngleTransition()
-    {
-        RaycastHit2D hit = Physics2D.Raycast(transform.position + new Vector3(0.3f, 0.4f, 0), Vector2.right, 0.5f);
-
-        return hit.collider is null;
-    }
-
+    
     protected void ChangeStateEnableRunMode()
     {
         _isTryEnableRunMode = !_isTryEnableRunMode;
     }
 
-    protected void TryEnableRunMode()
+    private bool CheckWall()
+    {
+        return Physics2D.Raycast(transform.position, Vector2.right * (IsFlipped ? -1 : 1), minDistanceToWall,
+            groundLayer);
+    }
+
+    protected void EnableRunMode()
     {
         if (curState == InsectState.Run) return;
-        //if (!CheckWall()) return;
+        if (!CheckWall()) return;
         _rb2d.gravityScale = 0;
         Debug.Log("WalkRun Mode Changed!");
         curState = InsectState.Run;
         walkBody.SetActive(false);
         runBody.SetActive(true);
+        
+        _rb2d.velocity = Vector2.zero;
 
         var p1 = moveLine[_currentPoint].position;
         var p2 = moveLine[_currentPoint+1].position;
         var p = _rb2d.position;
         
+        //Calculate start position when stick to surface
         t = Vector2.Distance(p1, p)/Vector2.Distance(p1,p2);
+
+        p = (p2 - p1).normalized;
+        IsVerticalInput = Mathf.Abs(p.y) > Mathf.Abs(p.x);
+        runSprite.flipY = IsFlipped;
     }
 
-    public void SetPathAndEnableRunMode(InsectLine moveLine, int index)
+    public void IntersectWithPath(InsectLine moveLine, int index)
     {
-        if (!_isTryEnableRunMode || this.moveLine == moveLine) return;
+        if (!_isTryEnableRunMode) return;
         _currentPoint = index;
         this.moveLine = moveLine;
-        TryEnableRunMode();
+        EnableRunMode();
     }
     
 
@@ -94,32 +94,48 @@ public class InsectController : MonoBehaviour
         if (curState == InsectState.Walk) return;
         _rb2d.gravityScale = 7;
         curState = InsectState.Walk;
-        moveLine = null;
         walkBody.SetActive(true);
         runBody.SetActive(false);
+        IsVerticalInput = false;
+        moveLine = null;
+    }
+
+    private bool CheckGround()
+    {
+        return Physics2D.OverlapCircle(checkGroundCircle.position, 0.15f, groundLayer);
     }
 
     protected void Jump()
     {
-        if (!Grounded) return;
+        if (!CheckGround()) return;
+        if (curState == InsectState.Run) return;
         _rb2d.AddForce(Vector2.up*jumpPower, ForceMode2D.Impulse);
-        //_rb2d.velocity += new Vector2(_rb2d.velocity.x, curState == InsectState.Run ? jumpPower : jumpPowerWalk);
     }
-
+    
     protected virtual void Start()
     {
         curState = InsectState.Walk;
         _rb2d = GetComponent<Rigidbody2D>();
     }
 
-
     protected virtual void Update()
     {
+        walkSprite.flipY = IsFlipped;
+        if (curState == InsectState.Run)
+        {
+            runSprite.flipX = IsFlipped;
+        }
         //if (_isTryEnableRunMode) TryEnableRunMode();
-        
-        Debug.DrawRay(transform.position, Vector2.right * (IsFlipped ? -1 : 1)*minDistanceToWall, Color.green);
-        Debug.DrawRay(transform.position, _normalSurface*1.5f, Color.green);
-        Debug.DrawRay(transform.position + new Vector3(0.3f, 0.4f, 0), Vector2.right*-0.5f, Color.red);
+
+        Debug.DrawRay(transform.position, Vector2.right * (IsFlipped ? -1 : 1) * minDistanceToWall, Color.green);
+        //Debug.DrawRay(transform.position, _normalSurface*1.5f, Color.green);
+        //Debug.DrawRay(transform.position + new Vector3(0.3f, 0.4f, 0), Vector2.right*-0.5f, Color.red);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        // if (checkGroundCircle != null)
+        //     Gizmos.DrawWireSphere(checkGroundCircle.position, 0.2f);
     }
 
     protected virtual void FixedUpdate()
@@ -147,14 +163,13 @@ public class InsectController : MonoBehaviour
         {
             _rb2d.velocity = new Vector2(moveSpeedWalk*MoveDir, _rb2d.velocity.y);
         }
-        
     }
 
-    private void OnCollisionStay2D(Collision2D collision)
-    {
-        if (collision.gameObject.CompareTag("Ground"))
-            _normalSurface = collision.contacts[0].normal;
-    }
+    // private void OnCollisionStay2D(Collision2D collision)
+    // {
+    //     if (collision.gameObject.CompareTag("Ground"))
+    //         _normalSurface = collision.contacts[0].normal;
+    // }
 
     private void OnTriggerStay2D(Collider2D other)
     {
