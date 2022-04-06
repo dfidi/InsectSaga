@@ -77,12 +77,12 @@ public class PlatformerCharacter : MonoBehaviour
         if (MoveDir < 0)
         {
             _flip = true;
-            RunDir = 1;
+            RunDir = -1;
         }
         else if (MoveDir > 0)
         {
             _flip = false;
-            RunDir = -1;
+            RunDir = 1;
         }
 
         spriteRenderer.flipX = _flip;
@@ -100,10 +100,13 @@ public class PlatformerCharacter : MonoBehaviour
             if (rayWall.collider is null)
             {
                 _rb2d.MoveRotation(_rb2d.rotation + (_flip ? rotationSpeed : -rotationSpeed));
+               
+                
             }
             else if (rayGround.collider != null)
             {
                 _rb2d.MoveRotation(_rb2d.rotation + (_flip ? -rotationSpeed : rotationSpeed));
+
             }
 
             Vector2 pos = _rb2d.position + (Vector2) transformRight * runSpeed * Time.fixedDeltaTime;
