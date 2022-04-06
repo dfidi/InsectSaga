@@ -26,7 +26,6 @@ public class InsectPlayer : PlatformerCharacter
     {
         Vector2 inputDirection = _input.Player.Movement.ReadValue<Vector2>();
         MoveDir = inputDirection.x;
-
         
         base.Update();
     }

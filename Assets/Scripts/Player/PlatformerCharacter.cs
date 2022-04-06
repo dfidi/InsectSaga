@@ -32,9 +32,8 @@ public class PlatformerCharacter : MonoBehaviour
     private float _distanceToWall;
     protected float MoveDir;
     protected int RunDir = 1;
-    protected Vector2 _normalSurface;
 
-    protected void ChangeTryToRunState() => _tryToRun = !_tryToRun;
+    protected void ChangeTryToRunState() => _tryToRun = true;
 
     protected void ChangeToRunState()
     {
@@ -52,7 +51,7 @@ public class PlatformerCharacter : MonoBehaviour
     {
         if (currentState == PlayerState.Normal) return;
         Debug.Log("Return To normal state");
-
+        _tryToRun = false;
         _rb2d.constraints = RigidbodyConstraints2D.FreezeRotation;
         _rb2d.gravityScale = 7;
         spriteRenderer.sprite = walkSprite;
@@ -72,47 +71,43 @@ public class PlatformerCharacter : MonoBehaviour
         _rb2d.velocity = new Vector2(_rb2d.velocity.x, jumpPower);
     }
 
-    private RaycastHit2D hit1, hit2;
+    private RaycastHit2D rayGround, rayWall;
     private void Move()
     {
-        if (MoveDir < 0) { _flip = true; }
-        else if (MoveDir > 0) { _flip = false; }
+        if (MoveDir < 0)
+        {
+            _flip = true;
+            RunDir = 1;
+        }
+        else if (MoveDir > 0)
+        {
+            _flip = false;
+            RunDir = -1;
+        }
 
         spriteRenderer.flipX = _flip;
-        RunDir = _flip ? -1 : 1;
 
         if (currentState == PlayerState.Normal)
             _rb2d.velocity = new Vector2(moveSpeed * MoveDir, _rb2d.velocity.y);
         else if (currentState == PlayerState.Run)
         {
-            hit1 = Physics2D.Raycast(transform.position, transform.right*RunDir, _distanceToWall, groundLayer);
-            hit2 = Physics2D.Raycast(transform.position + transform.right*RunDir*0.5f, -transform.up, 0.5f, groundLayer);
+            var transformUp = transform.up;
+            var transformRight = transform.right * RunDir;
+            
+            rayGround = Physics2D.Raycast(transform.position, transformRight, _distanceToWall, groundLayer);
+            rayWall = Physics2D.Raycast(transform.position + transformRight*0.5f, -transformUp, 0.5f, groundLayer);
 
-            if (hit2.collider == null)
+            if (rayWall.collider is null)
             {
-                if (_flip)
-                {
-                    transform.Rotate(0,0,rotationSpeed*Time.fixedDeltaTime);
-                }
-                else
-                {
-                    transform.Rotate(0,0,-rotationSpeed*Time.fixedDeltaTime);
-                }
+                _rb2d.MoveRotation(_rb2d.rotation + (_flip ? rotationSpeed : -rotationSpeed));
             }
-            else if (hit1.collider != null)
+            else if (rayGround.collider != null)
             {
-                if (_flip)
-                {
-                    transform.Rotate(0,0,-rotationSpeed*Time.fixedDeltaTime);
-                }
-                else
-                {
-                    transform.Rotate(0,0,rotationSpeed*Time.fixedDeltaTime);
-                }
+                _rb2d.MoveRotation(_rb2d.rotation + (_flip ? -rotationSpeed : rotationSpeed));
             }
 
-            Vector2 pos = _rb2d.position + (Vector2) transform.right * RunDir * runSpeed * Time.fixedDeltaTime;
-            pos -= (Vector2) transform.up * Time.fixedDeltaTime*2;
+            Vector2 pos = _rb2d.position + (Vector2) transformRight * runSpeed * Time.fixedDeltaTime;
+            pos -= (Vector2) transformUp * Time.fixedDeltaTime*2;
             _rb2d.MovePosition(pos);
         }
     }
@@ -141,10 +136,4 @@ public class PlatformerCharacter : MonoBehaviour
         Move();
 
     }
-    
-    // private void OnCollisionStay2D(Collision2D collision)
-    // {
-    //     if (collision.gameObject.CompareTag("Ground"))
-    //         _normalSurface = collision.contacts[0].normal;
-    // }
 }
