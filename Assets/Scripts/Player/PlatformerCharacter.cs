@@ -45,7 +45,9 @@ public class PlatformerCharacter : MonoBehaviour
         if (currentState == PlayerState.Crawl) return;
 
         if (!CheckRunGround() && !CheckRunWall()) return;
-
+        collTransform.DOKill();
+        transform.DOKill();
+        
         Quaternion angleRot = Quaternion.Euler(0, 0, 0);
 
         if (CheckRunWall())
@@ -56,6 +58,7 @@ public class PlatformerCharacter : MonoBehaviour
         
         insectAnimator.SetBool("is_crawl", true);
         _rb2d.constraints = RigidbodyConstraints2D.None;
+        _rb2d.gravityScale = 0;
         currentState = PlayerState.Crawl;
     }
     
@@ -65,10 +68,14 @@ public class PlatformerCharacter : MonoBehaviour
         if (currentState == PlayerState.Normal) return;
         insectAnimator.SetBool("is_crawl", false);
 
-        collTransform.localRotation = Quaternion.Euler(0, 0, 0);
-        transform.rotation = Quaternion.Euler(0, 0, 0);
+        collTransform.DOLocalRotate(Vector3.zero, 0.2f);
+        transform.DORotate(Vector3.zero, 0.2f);
+        
+        // collTransform.localRotation = Quaternion.Euler(0, 0, 0);
+        // transform.rotation = Quaternion.Euler(0, 0, 0);
         _rb2d.velocity = Vector2.zero; //Reset velocity, otherwise accumulates
         _rb2d.constraints = RigidbodyConstraints2D.FreezeRotation;
+        _rb2d.gravityScale = 7;
         currentState = PlayerState.Normal;
     }
 
