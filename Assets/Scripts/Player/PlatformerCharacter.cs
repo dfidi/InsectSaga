@@ -20,7 +20,7 @@ public class PlatformerCharacter : MonoBehaviour
     public float rayGroundLength;
 
     [Header("Компоненты")]
-    public Animator insectAnimator;
+    public Animator animator;
     public Transform collTransform;
     public Transform groundChecker;
     public SpriteRenderer spriteRenderer;
@@ -33,21 +33,18 @@ public class PlatformerCharacter : MonoBehaviour
     //VARIABLES
     private Rigidbody2D _rb2d;
     private bool _flip;
-    private bool _tryToRun;
+    private bool _isJump;
+    protected bool TryToRun;
     private float _distanceToWall;
     protected float MoveDir;
     protected int CrawlDir = 1;
 
-    protected void ChangeTryToRunState() => _tryToRun = true;
-
-    protected void ChangeToRunState()
+    protected void ToRunState()
     {
         if (currentState == PlayerState.Crawl) return;
 
         if (!CheckRunGround() && !CheckRunWall()) return;
-        collTransform.DOKill();
-        transform.DOKill();
-        
+
         Quaternion angleRot = Quaternion.Euler(0, 0, 0);
 
         if (CheckRunWall())
@@ -56,27 +53,31 @@ public class PlatformerCharacter : MonoBehaviour
         collTransform.localRotation = Quaternion.Euler(0, 0, -90);
         transform.rotation = angleRot;
         
-        insectAnimator.SetBool("is_crawl", true);
+        animator.SetBool("is_crawl", true);
         _rb2d.constraints = RigidbodyConstraints2D.None;
         _rb2d.gravityScale = 0;
         currentState = PlayerState.Crawl;
     }
     
-    protected void ReturnToNormalState()
+    protected void ToNormalState()
     {
-        _tryToRun = false;
+        TryToRun = false;
         if (currentState == PlayerState.Normal) return;
-        insectAnimator.SetBool("is_crawl", false);
+        animator.SetBool("is_crawl", false);
 
-        collTransform.DOLocalRotate(Vector3.zero, 0.2f);
-        transform.DORotate(Vector3.zero, 0.2f);
-        
-        // collTransform.localRotation = Quaternion.Euler(0, 0, 0);
-        // transform.rotation = Quaternion.Euler(0, 0, 0);
+        collTransform.localRotation = Quaternion.Euler(0, 0, 0);
+        transform.rotation = Quaternion.Euler(0, 0, 0);
         _rb2d.velocity = Vector2.zero; //Reset velocity, otherwise accumulates
         _rb2d.constraints = RigidbodyConstraints2D.FreezeRotation;
         _rb2d.gravityScale = 7;
         currentState = PlayerState.Normal;
+    }
+    
+    protected void Jump()
+    {
+        if (!CheckGround() || currentState == PlayerState.Crawl) return;
+        _rb2d.velocity = new Vector2(_rb2d.velocity.x, jumpPower);
+        _isJump = true;
     }
 
     #region RAYCASTS
@@ -95,29 +96,10 @@ public class PlatformerCharacter : MonoBehaviour
         return Physics2D.Raycast(transform.position, transform.right*CrawlDir, grabWallDistance, groundLayer);
     }
     #endregion
-    
-    protected void Jump()
-    {
-        if (!CheckGround() || currentState == PlayerState.Crawl) return;
-        _rb2d.velocity = new Vector2(_rb2d.velocity.x, jumpPower);
-    }
 
     private RaycastHit2D rayGround, rayWall;
     private void Move()
     {
-        if (MoveDir < 0)
-        {
-            _flip = true;
-            CrawlDir = -1;
-        }
-        else if (MoveDir > 0)
-        {
-            _flip = false;
-            CrawlDir = 1;
-        }
-
-        spriteRenderer.flipX = _flip;
-
         if (currentState == PlayerState.Normal)
             _rb2d.velocity = new Vector2(moveSpeed * MoveDir, _rb2d.velocity.y);
         else if (currentState == PlayerState.Crawl)
@@ -148,11 +130,26 @@ public class PlatformerCharacter : MonoBehaviour
         currentState = PlayerState.Normal;
         _distanceToWall  = 0.5f+1 / Mathf.Sqrt(2);
     }
-    
-    
-    protected virtual void Update()
+
+    private void UpdatePlayerDirection()
     {
-        if (_tryToRun) ChangeToRunState();
+        if (MoveDir < 0)
+        {
+            _flip = true;
+            CrawlDir = -1;
+        }
+        else if (MoveDir > 0)
+        {
+            _flip = false;
+            CrawlDir = 1;
+        }
+
+        spriteRenderer.flipX = _flip;
+    }
+
+
+    private void DrawDebugRays()
+    {
         if (currentState == PlayerState.Crawl)
         {
             Debug.DrawRay(transform.position, transform.right * CrawlDir * _distanceToWall, Color.red);
@@ -160,6 +157,13 @@ public class PlatformerCharacter : MonoBehaviour
         }
         Debug.DrawRay(transform.position, transform.right * CrawlDir * grabWallDistance, Color.blue);
         Debug.DrawRay(transform.position, -transform.up * grabGroundDistance, Color.blue);
+    }
+    
+    protected virtual void Update()
+    {
+        if (TryToRun) ToRunState();
+        UpdatePlayerDirection();
+        DrawDebugRays();
     }
 
     private void FixedUpdate()
